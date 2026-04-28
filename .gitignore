@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+data_env/
+*.egg-info/
+dist/
+build/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# Data files (si volumineux)
+*.csv
+*.xlsx
+*.xls
+*.db
+*.sqlite
+*.h5
+*.pkl
+*.pickle
+
+# Exceptions pour petits datasets
+!datasets/sample_*.csv
+!datasets/example_*.xlsx
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Credentials
+.env
+config.ini
+secrets.json
+*.key
+*.pem
+
+# Temporary files
+*.tmp
+*.log
+tmp/
+temp/
