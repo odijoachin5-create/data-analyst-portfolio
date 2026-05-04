@@ -1,18 +1,27 @@
 # Superstore Sales Analysis
 
-## Objectif
-Analyse des ventes d une chaine retail americaine.
+## Description
+Analyse exploratoire de 9994 transactions retail (2014-2017) pour identifier les leviers de croissance.
 
-## Dataset
-- Source : Kaggle - Superstore Sales Dataset
-- 9994 lignes x 21 colonnes (2014-2017)
+## Objectifs
+- Calculer des métriques business (revenue, profit margin, delivery time)
+- Identifier les sous-catégories et régions les plus rentables
+- Analyser l impact des discounts sur la profitabilité
 
-## Competences utilisees
-- NumPy : vectorisation, broadcasting, filtrage booleen
+## Technologies
+- NumPy : vectorisation et calculs numériques
 - Pandas : GroupBy, Pivot Tables, Time Series
-- Matplotlib : subplots, customisation
+- Matplotlib : dashboard de visualisations
 
-## Insights cles
-1. Les discounts sup a 20pct generent des pertes
-2. La region West domine le chiffre d affaires
-3. Les Tables et Bookcases sont les moins rentables
+## Résultats Clés
+1. Discounts sup à 20% génèrent des pertes systématiques
+2. La région West est la plus rentable
+3. Tables et Bookcases sont les sous-catégories les moins rentables
+4. Délai de livraison moyen : 4 jours
+
+## Visualisations
+![Dashboard](superstore_analysis.png)
+
+## Fichiers
+- jour2_numpy_superstore.ipynb : Notebook complet
+- superstore_analysis.png : Dashboard 4 graphiques
