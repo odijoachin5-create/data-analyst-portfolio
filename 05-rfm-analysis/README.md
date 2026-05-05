@@ -1,13 +1,15 @@
-# 🎯 Analyse RFM — Segmentation Clients Superstore
+# 🎯 Analyse RFM Avancée — Segmentation & Prédiction Churn
 
 ![RFM Dashboard](rfm_dashboard.png)
 
 ## 📋 Description
-Segmentation clients complète par analyse **RFM (Recency, Frequency, Monetary)** sur 793 clients
-du dataset Superstore, entièrement réalisée en **SQL avancé** (CTEs chaînées + Window Functions NTILE).
+Projet complet de **segmentation clients RFM** combinant SQL avancé, statistiques
+inférentielles, clustering non-supervisé (K-Means) et modèle prédictif de churn
+(Random Forest) sur 793 clients du dataset Superstore (2014-2017).
 
-Ce projet démontre une approche Data Scientist rigoureuse : détection et correction d une anomalie
-de scoring, interprétation critique des résultats, et recommandations business actionnables.
+Ce projet adopte une approche **Data Scientist rigoureuse** : validation statistique
+des segments, détection et correction d anomalies de scoring, comparaison de méthodes
+de segmentation, et modèle prédictif avec interprétation des facteurs de risque.
 
 ---
 
@@ -15,196 +17,254 @@ de scoring, interprétation critique des résultats, et recommandations business
 | Outil | Usage |
 |-------|-------|
 | PostgreSQL 18 | Calcul RFM 100% en SQL |
-| CTEs (WITH) | Pipeline en 4 étapes lisibles |
+| CTEs chaînées | Pipeline en 4 étapes lisibles |
 | NTILE(5) OVER | Scoring par quintiles |
-| LAG / LEAD | Croissance temporelle |
-| ROW_NUMBER / RANK | Classements par partition |
+| Window Functions | LAG, LEAD, ROW_NUMBER, RANK |
 | SQLAlchemy | Connexion Python → PostgreSQL |
-| Pandas | Agrégations post-SQL |
-| Matplotlib | Dashboard 6 panels |
+| Pandas | Agrégations et transformations |
+| Scikit-learn | K-Means + Random Forest |
+| SciPy | Tests statistiques ANOVA, Shapiro-Wilk |
+| Matplotlib/Seaborn | Dashboard 8 visualisations |
 
 ---
 
-## 🔬 Méthodologie RFM
+## 🔬 Méthodologie
 
-### Définition des dimensions
-| Dimension | Question business | Calcul SQL |
-|-----------|------------------|------------|
-| **Recency (R)** | Depuis combien de jours le client a-t-il acheté ? | MAX(order_date) - date_référence |
-| **Frequency (F)** | Combien de commandes a-t-il passé ? | COUNT(DISTINCT order_id) |
-| **Monetary (M)** | Combien a-t-il dépensé au total ? | SUM(sales) |
-
-### Scoring NTILE(5) — Quintiles
-Chaque dimension est divisée en 5 quintiles (score 1 à 5) :
-
-| Score | Recency | Frequency | Monetary |
-|-------|---------|-----------|----------|
-| 5 | Achat < 30 jours | > 10 commandes | > 5 000 USD |
-| 4 | Achat 30-90 jours | 7-10 commandes | 3 000-5 000 USD |
-| 3 | Achat 90-150 jours | 5-7 commandes | 1 500-3 000 USD |
-| 2 | Achat 150-250 jours | 3-5 commandes | 500-1 500 USD |
-| 1 | Achat > 250 jours | < 3 commandes | < 500 USD |
+### Pipeline complet
+    1. SQL        → Calcul Recency, Frequency, Monetary par client
+    2. SQL        → Scoring NTILE(5) sur chaque dimension
+    3. SQL        → Segmentation par règles CASE WHEN
+    4. Python     → Validation statistique des segments (ANOVA, Shapiro)
+    5. Scikit-learn → Clustering K-Means pour validation non-supervisée
+    6. Scikit-learn → Modèle prédictif de churn (Random Forest)
+    7. Dashboard  → Visualisation executive multi-panels
 
 ### Anomalie détectée et corrigée 🔍
-Lors de l analyse, une **inversion du score Recency** a été détectée :
-la requête initiale attribuait le score 5 aux clients les plus anciens.
+Lors de l analyse initiale, une **inversion du score Recency** a été détectée :
+la requête initiale attribuait le score 5 aux clients les plus anciens — exactement
+l inverse de la logique RFM standard.
 
-**Correction appliquée** :
 ```sql
--- AVANT (incorrect) : récent → score 1
+-- AVANT (incorrect) : ancien → score 5
 NTILE(5) OVER (ORDER BY recency_days ASC)
 
 -- APRÈS (correct) : récent → score 5
 NTILE(5) OVER (ORDER BY recency_days DESC)
 ```
-Cette correction démontre l importance de la validation systématique des résultats
+Cette détection démontre l importance de la **validation croisée des résultats**
 avant toute interprétation — réflexe fondamental en Data Science.
 
 ---
 
-## 📊 Résultats par Segment
+## 📊 Résultats RFM par Segment
 
 | Segment | Clients | % | Recency moy | Frequency moy | Monetary moy | Revenue total |
 |---------|---------|---|-------------|---------------|--------------|---------------|
-| Potentiel Loyaute | 337 | 42.5% | 130 jours | 7.14 commandes | 3 447 USD | 1 161 600 USD |
-| Clients Fideles | 263 | 33.2% | 186 jours | 4.80 commandes | 1 418 USD | 372 988 USD |
-| Hibernants | 105 | 13.2% | 196 jours | 8.58 commandes | 5 541 USD | 581 828 USD |
-| Champions | 71 | 9.0% | 33 jours | 3.73 commandes | 733 USD | 52 011 USD |
-| Nouveaux Clients | 17 | 2.1% | 37 jours | 10.29 commandes | 7 575 USD | 128 775 USD |
+| Potentiel Loyaute | 337 | 42.5% | 130 jours | 7.14 | 3 447 USD | 1 161 600 USD |
+| Clients Fideles | 263 | 33.2% | 186 jours | 4.80 | 1 418 USD | 372 988 USD |
+| Hibernants | 105 | 13.2% | 196 jours | 8.58 | 5 541 USD | 581 828 USD |
+| Champions | 71 | 9.0% | 33 jours | 3.73 | 733 USD | 52 011 USD |
+| Nouveaux Clients | 17 | 2.1% | 37 jours | 10.29 | 7 575 USD | 128 775 USD |
 
 **Revenue total analysé : 2 297 201 USD**
 
 ---
 
-## 🧠 Analyse Scientifique des Résultats
+## 🧪 Validation Statistique des Segments
 
-### Distribution statistique
-| Métrique | Valeur |
-|----------|--------|
-| Total clients | 793 |
-| Score RFM moyen | 8.99 / 15 |
-| Score RFM médian | 9.00 / 15 |
-| Écart-type | 2.48 |
-| Recency moyenne | 147 jours |
-| Frequency moyenne | 6.32 commandes |
-| Monetary moyenne | 2 897 USD |
+### Test ANOVA — Les segments sont-ils réellement distincts ?
+| Métrique | Valeur | Interprétation |
+|----------|--------|----------------|
+| F-statistique | **124.17** | Variance inter-groupes très élevée |
+| P-value | **< 0.0001** | Résultat hautement significatif |
+| Conclusion | ✅ **OUI** | Les segments sont statistiquement distincts |
 
-**Observation** : La quasi-égalité entre moyenne (8.99) et médiane (9.00) indique
-une **distribution symétrique** des scores RFM — pas de biais majeur dans le scoring.
-L écart-type de 2.48 révèle une **dispersion modérée** : les clients sont relativement
-homogènes, sans groupes extrêmes très marqués.
+**Interprétation** : Un F-stat de 124.17 signifie que la variance entre segments
+est 124x supérieure à la variance intra-segments. Les groupes RFM ne sont pas
+le fruit du hasard — ils capturent de vraies différences comportementales.
+
+### Test de Normalité Shapiro-Wilk par segment
+| Segment | W-stat | P-value | Distribution |
+|---------|--------|---------|--------------|
+| Champions | 0.924 | 0.0004 | Non-normale |
+| Clients Fideles | 0.899 | < 0.0001 | Non-normale |
+| Potentiel Loyaute | 0.725 | < 0.0001 | Non-normale |
+| Hibernants | 0.881 | < 0.0001 | Non-normale |
+| Nouveaux Clients | 0.824 | 0.0045 | Non-normale |
+
+**Implication méthodologique** : Toutes les distributions étant non-normales,
+les comparaisons inter-segments doivent utiliser des **tests non-paramétriques**
+(Mann-Whitney U) plutôt que des t-tests classiques. Ce résultat est typique
+des données de vente qui suivent des lois à queue lourde (Pareto/log-normale).
 
 ---
 
-### Matrice de corrélations RFM
+## 📊 Corrélations RFM
+
 | | Recency | Frequency | Monetary | Score Total |
 |---|---------|-----------|----------|-------------|
 | **Recency** | 1.000 | -0.384 | -0.143 | -0.098 |
 | **Frequency** | -0.384 | 1.000 | 0.418 | -0.661 |
 | **Monetary** | -0.143 | 0.418 | 1.000 | -0.614 |
 
-**Interprétations statistiques :**
+**Insights statistiques :**
 
-1. **Recency ↔ Frequency (r = -0.384)** : Corrélation négative modérée.
-Les clients qui achètent fréquemment ont tendance à avoir acheté plus récemment.
-Signal d un comportement d achat régulier.
+1. **Recency ↔ Frequency (r = -0.384)** : Les acheteurs fréquents achètent aussi plus récemment.
+Signal d un comportement d achat régulier et de fidélité comportementale.
 
-2. **Frequency ↔ Monetary (r = +0.418)** : Corrélation positive modérée.
-Plus un client commande souvent, plus son panier cumulé est élevé.
-Relation attendue et cohérente économiquement.
+2. **Frequency ↔ Monetary (r = +0.418)** : Relation positive modérée attendue.
+Plus de commandes = panier cumulé plus élevé. Pas de surprise économique ici.
 
-3. **Recency ↔ Monetary (r = -0.143)** : Corrélation très faible.
-Le montant dépensé ne prédit pas la récence d achat — les gros dépensiers
-ne sont pas nécessairement les plus récents. Insight contre-intuitif.
+3. **Recency ↔ Monetary (r = -0.143)** : Corrélation quasi-nulle.
+Les gros dépensiers ne sont pas forcément les plus récents — insight contre-intuitif
+qui justifie le suivi combiné des 3 dimensions plutôt qu une seule métrique.
 
-4. **Frequency → Score Total (r = -0.661)** : Corrélation forte et négative.
-La fréquence est le **facteur le plus discriminant** du score RFM.
-Cela indique que la fidélité comportementale (fréquence) prime sur la valeur monétaire.
+4. **Frequency → Score Total (r = -0.661)** : **Facteur le plus discriminant**.
+La fréquence d achat est le meilleur prédicteur du score RFM global.
 
 ---
 
-### Insights critiques par segment
+## 🤖 Clustering K-Means — Validation Non-Supervisée
 
-#### 🏆 Champions (71 clients, 9%) — Potentiel à développer
-Recency très faible (33 jours ✅) mais monetary bas (733 USD).
-Ce sont des clients **récemment acquis** dont la valeur n est pas encore
-pleinement développée. Priorité : augmenter le panier moyen via cross-sell.
+### Paramètres optimaux
+| Paramètre | Valeur |
+|-----------|--------|
+| K optimal | **3 clusters** |
+| Silhouette Score | **0.358** |
+| Méthode sélection | Coude + Silhouette |
 
-#### ⚠️ Hibernants (105 clients, 13.2%) — Alerte critique
-**Insight majeur** : monetary moyen de 5 541 USD et frequency de 8.58
-mais recency de 196 jours. Ce segment représente en réalité des
-**clients à très haute valeur historique en train de décrocher**.
-Revenue total : 581 828 USD à risque de perdre définitivement.
-Action urgente requise.
+### Profil des clusters K-Means
+| Cluster | Clients | Recency moy | Frequency moy | Monetary moy | Profil |
+|---------|---------|-------------|---------------|--------------|--------|
+| 0 | 412 | 88 jours | 5.35 | 1 772 USD | Clients réguliers |
+| 1 | 270 | 79 jours | 8.84 | 5 131 USD | Clients VIP actifs |
+| 2 | 111 | 530 jours | 3.77 | 1 637 USD | Clients inactifs |
 
-#### 🌟 Nouveaux Clients (17 clients, 2.1%) — Anomalie positive
-Monetary moyen de 7 574 USD (le plus élevé de tous les segments) avec
-une recency de 37 jours. Ces 17 clients sont probablement des
-**comptes Corporate ou des acheteurs en volume** récemment acquis.
-Traitement VIP immédiat recommandé.
+### Concordance RFM ↔ K-Means
+| Segment RFM | Cluster 0 | Cluster 1 | Cluster 2 |
+|-------------|-----------|-----------|-----------|
+| Champions | 71 | 0 | 0 |
+| Clients Fideles | 195 | 6 | 62 |
+| Hibernants | 1 | **94** | 10 |
+| Nouveaux Clients | 0 | **17** | 0 |
+| Potentiel Loyaute | 145 | 153 | 39 |
 
-#### 📊 Potentiel Loyauté (337 clients, 42.5%) — Le cœur du business
-Ce segment dominant représente 50.6% du revenue total (1 161 600 USD).
-C est la **base client principale** à convertir en Clients Fidèles.
+**Insight critique** : Le K-Means confirme scientifiquement que les **Hibernants**
+(105 clients RFM) correspondent au **Cluster 1 VIP** (94/105 soit 89.5%) —
+le cluster à plus haute valeur (monetary 5 131 USD, frequency 8.84).
+
+Cela valide l alerte émise lors de l analyse RFM : les Hibernants sont en réalité
+des **clients VIP à très haute valeur en train de décrocher**, pas de simples
+clients inactifs. Les 581 828 USD de revenue associés sont directement menacés.
+
+**Note sur le Silhouette Score (0.358)** : Un score modéré indique que les clients
+ne forment pas de clusters géométriquement parfaits dans l espace RFM.
+Cela justifie l apport de la segmentation RFM basée sur des règles métier
+par rapport au clustering purement mathématique.
 
 ---
 
-## 💡 Recommandations Business par Segment
+## 🔮 Modèle Prédictif de Churn (Random Forest)
 
-### 🏆 Champions — Nurturing & Upsell
-- Proposer des produits premium et nouvelles catégories
-- Programme d onboarding approfondi pour augmenter le panier
-- Objectif : faire passer monetary de 733 USD à 2 000 USD en 6 mois
+### Définition du churn
+Churn = client avec recency > 180 jours (inactif depuis plus de 6 mois)
 
-### ⚠️ Hibernants — Réactivation d urgence (581 828 USD à risque)
-- Campagne de réactivation immédiate avec offre personnalisée
-- Appel commercial direct pour les 20 plus gros comptes
-- Analyse des raisons de décrochage (prix, concurrence, satisfaction)
-- Budget recommandé : 10-15% du revenue à risque en actions marketing
+### Performance du modèle
+| Métrique | Classe 0 (Actif) | Classe 1 (Churné) | Global |
+|----------|-----------------|-------------------|--------|
+| Precision | 0.94 | 0.90 | — |
+| Recall | 0.97 | 0.81 | — |
+| F1-Score | 0.96 | 0.85 | — |
+| **Accuracy** | — | — | **93%** |
+| Support | 180 | 58 | 238 |
 
-### 🌟 Nouveaux Clients — Traitement VIP
-- Account manager dédié pour ces 17 comptes stratégiques
-- Contrat cadre avec conditions préférentielles
-- Objectif : fidéliser ces comptes à fort potentiel
+### Importance des facteurs de churn
+| Facteur | Importance | Interprétation |
+|---------|-----------|----------------|
+| **r_score** | **70.87%** | La recency prédit le churn à elle seule |
+| monetary | 16.35% | Les gros dépensiers churent moins |
+| frequency | 6.84% | Fréquence : signal secondaire |
+| f_score | 3.83% | Score fréquence : signal faible |
+| m_score | 2.11% | Score monetary : signal très faible |
 
-### 📊 Potentiel Loyauté — Conversion prioritaire
+**Insight majeur** : Le r_score représente **70.87% du pouvoir prédictif**
+du modèle. La recency est le signal d alarme le plus précoce et le plus fiable
+du risque de churn. Cela justifie de monitorer la recency en temps réel
+plutôt qu attendre les rapports mensuels.
+
+**Implication opérationnelle** : Un client qui n a pas acheté depuis 90 jours
+doit déclencher automatiquement une action marketing — avant d atteindre le seuil
+des 180 jours où le churn devient très probable.
+
+---
+
+## 📉 Visualisations
+![RFM Dashboard](rfm_dashboard.png)
+*Dashboard 6 panels : Distribution segments | Revenue | Panier | Scatter R×F | Distribution scores | Répartition*
+
+![KMeans Elbow](rfm_kmeans_elbow.png)
+*Méthode du coude et Silhouette Score pour sélection du K optimal*
+
+![RFM Heatmap](rfm_heatmap_scores.png)
+*Heatmap classique : Monetary moyen par score Recency × Frequency*
+
+![Bubble Chart](rfm_bubble_executive.png)
+*Vue executive : position et poids de chaque segment (taille = revenue)*
+
+---
+
+## 💡 Recommandations Business
+
+### Priorité 1 — Hibernants (581 828 USD à risque immédiat)
+- Campagne de réactivation ciblée dans les 30 jours
+- Appel commercial direct sur les 20 plus gros comptes
+- Budget marketing recommandé : 10-15% du revenue à risque
+- KPI de succès : recency < 90 jours dans 3 mois
+
+### Priorité 2 — Champions (potentiel à développer)
+- Programme d onboarding intensif (récents mais faible monetary)
+- Cross-sell sur catégories Technology (marge 15.61%)
+- Objectif : monetary × 3 en 6 mois
+
+### Priorité 3 — Potentiel Loyauté (1.16M USD — cœur du business)
 - Programme de fidélité avec paliers de récompenses
-- Campagnes ciblées sur les catégories non achetées (cross-sell)
-- Email nurturing mensuel avec recommandations personnalisées
+- Campagnes cross-sell sur catégories non achetées
+- Nurturing mensuel personnalisé
 
-### 💙 Clients Fidèles — Rétention
-- Reconnaissance et avantages exclusifs
-- Sollicitation pour avis et recommandations (NPS)
-- Invitation aux événements clients et nouveautés
+### Alerte automatique recommandée
+Implémenter un trigger : tout client sans achat depuis 90 jours
+→ déclenchement automatique d une action marketing
+(email personnalisé, appel commercial, offre dédiée)
 
 ---
 
 ## ⚠️ Limites & Perspectives
 
-### Limites de l analyse
-1. **Pas de données démographiques** : l analyse RFM est purement comportementale
-2. **Période figée** : snapshot 2014-2017, les tendances récentes ne sont pas capturées
-3. **Seuils arbitraires** : les seuils de segmentation (13, 10, 7) méritent une calibration
-   par test A/B sur les campagnes marketing réelles
-4. **Absence de CLV** : le Customer Lifetime Value prédictif nécessiterait
-   un modèle de régression ou de survie sur données historiques plus longues
+### Limites
+1. Données figées 2014-2017 — pas de données temps réel
+2. Pas de variables démographiques ou comportementales externes
+3. Seuil churn (180 jours) défini empiriquement — à calibrer par test A/B
+4. Silhouette modéré (0.358) — clustering non parfaitement séparable
 
-### Améliorations possibles
-- Modèle prédictif de churn (Random Forest ou Gradient Boosting)
-- Segmentation par K-Means pour des clusters non supervisés
-- Calcul du CLV par segment avec modèle pareto/NBD
-
----
-
-## 📁 Fichiers
-- jour5_rfm_analysis.ipynb : Notebook SQL + Python complet
-- rfm_dashboard.png : Dashboard 6 panels
+### Perspectives Data Science
+- **CLV prédictif** : modèle pareto/NBD ou BG/NBD pour Customer Lifetime Value
+- **Churn avancé** : Gradient Boosting (XGBoost) avec features temporelles
+- **Segmentation dynamique** : recalcul RFM mensuel automatisé
+- **Personnalisation** : système de recommandation produit par segment
 
 ---
 
-## 🔗 Source des Données
+## ⚙️ Reproduction
+```bash
+sudo service postgresql start
+jupyter notebook jour5_rfm_analysis.ipynb
+```
+
+---
+
+## 🔗 Source
 - [Kaggle — Superstore Dataset](https://www.kaggle.com/datasets/vivek468/superstore-dataset-final)
 
 ---
 
-*Projet réalisé dans le cadre d un parcours intensif Data Analyst — Jour 5/28*
+*Projet réalisé dans le cadre d un parcours intensif Data Analyst / Data Scientist — Jour 5/28*
