@@ -46,7 +46,7 @@ Je transforme les données en insights actionnables grâce à :
 - 📈 5+ visualisations professionnelles
 - 💡 Insights actionnables sur les inégalités sociales
 
-**[📁 Voir le projet →](./01-titanic-analysis)** *(En cours)*
+**[📁 Voir le projet →](./01-titanic-analysis)** 
 
 ---
 
@@ -55,7 +55,7 @@ Je transforme les données en insights actionnables grâce à :
 
 **Compétences :** SQL, Pandas, Visualisation, Business Intelligence
 
-**[📁 Voir le projet →](./02-superstore-sales)** *(À venir)*
+**[📁 Voir le projet →](./02-superstore-sales)** 
 
 ---
 
@@ -64,7 +64,7 @@ Je transforme les données en insights actionnables grâce à :
 
 **Compétences :** Power BI, DAX, Data Modeling
 
-**[📁 Voir le projet →](./03-visualizations)** *(À venir)*
+**[📁 Voir le projet →](./03-visualizations)** 
 
 ---
 
@@ -73,7 +73,7 @@ Je transforme les données en insights actionnables grâce à :
 
 **Compétences :** PostgreSQL, Query Optimization, Database Design
 
-**[📁 Voir le projet →](./04-sql-queries)** *(À venir)*
+**[📁 Voir le projet →](./04-sql-queries)** 
 
 ---
 
@@ -96,11 +96,11 @@ Spécialisé dans :
 ## 📫 Contact
 
 - 💼 GitHub : [@odijoachin5-create](https://github.com/odijoachin5-create)
-- 📧 Email : *À compléter*
-- 💼 LinkedIn : *À compléter*
+- 📧 Email : rafalimananaodilon@gmail.com
+- 💼 LinkedIn :
 
 ---
 
 ⭐ **N'hésitez pas à explorer mes projets et à me contacter pour toute opportunité !**
 
-📅 **Dernière mise à jour :** Avril 2026
+
